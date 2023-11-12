@@ -9,7 +9,6 @@ plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示为方块的问�
 
 class TreeNode:
     def __init__(self, parent=None, feature=None, value=None, text='None', index=None):
-        self.pos = None
         self.children = {}
         self.parent = parent
         self.feature = feature
@@ -33,10 +32,11 @@ class TreeNode:
 
 
 class DecisionTree:
-    def __init__(self, feature_name, max_depth=None):
+    def __init__(self, feature_name, mapping, max_depth=None):
         self.max_depth = max_depth
         self.index = 0
         self.feature_name = feature_name
+        self.mapping = mapping
 
     def fit(self, X, y, parent=None, depth=0, text='None', criterion='entropy'):
         if depth == self.max_depth or len(set(y)) == 1:
@@ -63,8 +63,9 @@ class DecisionTree:
             branch_indices = X[:, best_feature] == value
             branch_X = X[branch_indices]
             branch_y = y[branch_indices]
+            feature = self.feature_name[best_feature]
             tree.children[value] = self.fit(branch_X, branch_y, parent=tree, depth=depth + 1,
-                                            text=f'{self.feature_name[best_feature]} = {value}', criterion=criterion)
+                                            text=f'{self.mapping[feature][value]}', criterion=criterion)
 
         return tree
 
@@ -84,7 +85,7 @@ class DecisionTree:
 
             information_gain = total_entropy - weighted_entropy
 
-            if information_gain > best_information_gain:
+            if information_gain >= best_information_gain:
                 best_information_gain = information_gain
                 best_feature = feature
 
@@ -103,7 +104,7 @@ class DecisionTree:
                 subset_y = y[subset_indices]
                 weighted_gini += len(subset_y) / len(y) * self.gini(subset_y)
 
-            if weighted_gini < best_gini:
+            if weighted_gini <= best_gini:
                 best_gini = weighted_gini
                 best_feature = feature
 
@@ -168,7 +169,7 @@ class PlotDT:
 
     def plotNode(self, tree, depth):
         if tree.children:
-            self.G.add_node(tree.index, label=tree.feature + '？', partition=depth)
+            self.G.add_node(tree.index, label=tree.feature + '=？', partition=depth)
         else:
             self.G.add_node(tree.index, label='好瓜' if tree.value == 0 else '坏瓜', partition=depth)
 
